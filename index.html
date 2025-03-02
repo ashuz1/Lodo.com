@@ -1,131 +1,143 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Ultimate Fire Link</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=720 height=1280 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">Ultimate Fire Link</div>
-      </div>
-    </div>
-    <script>
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Ultimate Fire Link</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: black;
+    }
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+    #unity-canvas {
+      height: 100%;
+      width: 100%;
+    }
+
+      #loading-screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+  }
+
+
+
+
+  </style>
+</head>
+
+<body>
+
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+
+    let AspectRatio;
+    let ISMobile;
+
+    function isMobile(unityInstance) {
+        console.log("Called isMobile");
+
+        var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        var isMobile = /android/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent) || /Windows Phone/i.test(userAgent);
+
+        ISMobile = isMobile;
+
+        if (isMobile) {
+            AspectRatio = 9 / 16;
+        } else {
+            AspectRatio = 16 / 9;
         }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/ludo.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/ludo.data.unityweb",
-        frameworkUrl: buildUrl + "/ludo.framework.js.unityweb",
-        codeUrl: buildUrl + "/ludo.wasm.unityweb",
+        resizeCanvas();
+
+        if (typeof unityInstance !== "undefined") {
+            let s = isMobile ? "A" : "B";
+            unityInstance.SendMessage('CanvasSwitcher', 'OnMobileDeviceDetected', s);
+        } else {
+            console.log("Unity instance is undefined");
+        }
+    }
+
+    function resizeCanvas() {
+        let windowWidth = window.innerWidth;
+        let windowHeight = window.innerHeight;
+
+        if (ISMobile) {
+            // Enforce 9:16 aspect ratio for portrait mode
+            let canvasWidth = windowWidth;
+            let canvasHeight = canvasWidth * (16 / 9); // Maintain aspect ratio
+
+            if (canvasHeight > windowHeight) {
+                canvasHeight = windowHeight;
+                canvasWidth = canvasHeight * (9 / 16);
+            }
+
+            canvas.style.width = `${canvasWidth}px`;
+            canvas.style.height = `${canvasHeight}px`;
+        } else {
+            // Enforce 16:9 aspect ratio for landscape mode
+            let canvasWidth = windowWidth;
+            let canvasHeight = canvasWidth / AspectRatio;
+
+            if (canvasHeight > windowHeight) {
+                canvasHeight = windowHeight;
+                canvasWidth = canvasHeight * AspectRatio;
+            }
+
+            canvas.style.width = `${canvasWidth}px`;
+            canvas.style.height = `${canvasHeight}px`;
+        }
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/GameBuild.loader.js";
+    var config = {
+        dataUrl: buildUrl + "/GameBuild.data.unityweb",
+        frameworkUrl: buildUrl + "/GameBuild.framework.js.unityweb",
+        codeUrl: buildUrl + "/GameBuild.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Ultimate Fire Link",
         productVersion: "1.0",
-        showBanner: unityShowBanner,
-      };
+    };
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
-        canvas.style.width = "720px";
-        canvas.style.height = "1280px";
-      }
-
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                loadingBar.style.display = "none";
-                fullscreenButton.onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-              }).catch((message) => {
-                alert(message);
-              });
-            };
+        }).then((unityInstance) => {
+            setTimeout(function() { isMobile(unityInstance) }, 6);
+        }).catch((message) => {
+            alert(message);
+        });
+    };
 
-      document.body.appendChild(script);
+    document.body.appendChild(script);
+    window.addEventListener('load', resizeCanvas);
+</script>
 
+     <script type="text/javascript">
+        // console.log = function() {};
+        // console.warn = function() {};
+        // console.error = function() {};
     </script>
-  </body>
+    <script>
+      window.focus();
+    </script>
+
+</body>
+
 </html>
